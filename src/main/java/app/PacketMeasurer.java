@@ -32,7 +32,7 @@ public class PacketMeasurer implements Callable<Device> {
             int minPacketSize = 0;
             int tempPacketSize = maxPacketSize;
             boolean isPassed;
-            // Бинарный поиск максимального размера ICMP пакета - 1600 байт желаемый размер
+            // Бинарный поиск максимального размера ICMP пакета - считаем, что 1600 байт желаемый размер
             while (maxPacketSize - minPacketSize > 1) {
                 System.out.println("Temp: " + tempPacketSize + " Min: " + minPacketSize + ", Max: " + maxPacketSize);
                 isPassed = sendPacketToDevice(tempPacketSize);

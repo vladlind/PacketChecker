@@ -4,18 +4,26 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
 @Controller
-@RequestMapping("/devices")
+@RequestMapping("/packetchecker")
 public class PacketController {
+
+    Logger log  = Logger.getLogger(PacketController.class.getName());
 
     private final DeviceRepository deviceRepository;
 
@@ -23,7 +31,7 @@ public class PacketController {
     private final ExecutorService userPool = Executors.newFixedThreadPool(10);
 
     //Пул потоков для проверок по расписанию
-    private final ExecutorService scheduledPool = Executors.newFixedThreadPool(3);
+    private final ExecutorService scheduledPool = Executors.newFixedThreadPool(10);
 
     // Спринг читает список "устройств" из application.properties для регулярных проверок
     @Value("${devices}")
@@ -35,38 +43,39 @@ public class PacketController {
         this.devices = devices;
     }
 
-    /*Запуск ручной проверки - через http://localhost:8080/devices/{device_to_check}   */
-    @GetMapping("/{device}")
-    public ResponseEntity<String> checkPacketSizePerRequest(@PathVariable("device") String ipAddress) {
-        measurePackets(ipAddress, userPool);
+    /*Запуск ручной проверки - через http://localhost:8080/packetchecker/{devices_to_check_comma_separated}   */
+    @GetMapping("/{devices}")
+    public ResponseEntity<String> checkPacketSizePerRequest(@PathVariable("devices") String ipAddresses) {
+        String[] ipArray = Arrays.stream(ipAddresses.split(",")).toArray(String[] ::new);
+        measurePackets(ipArray, userPool);
         return new ResponseEntity<>(
-                String.format("Запрос на проверку %s отправлен", ipAddress),
+                String.format("Запрос на проверку %s отправлен", ipAddresses),
                 HttpStatus.OK);
     }
 
     /*    Запускаем задачу каждые 4 часа - проверяем в цикле полученный из application.properties
         список "устройств" в потоках из выделенного пула потоков, чтобы не занимать пользовательский пул*/
 
-    @Scheduled(initialDelay = 10000, fixedRate = 4 * 60 * 60 * 1000)
+    @Scheduled(initialDelay = 1000000, fixedRate = 4 * 60 * 60 * 1000)
     public void checkPacketSizeBulkScheduled() {
-        for (String device : devices) {
-            measurePackets(device, scheduledPool);
-        }
+        measurePackets(devices, scheduledPool);
     }
 
-    private void measurePackets(String ipAddress, ExecutorService executorService) {
-        Future<Device> future = executorService.submit(new PacketMeasurer(ipAddress));
-        Device device;
-        try {
-            device = future.get(30, TimeUnit.SECONDS);
-        } catch (Exception e) {
-            e.printStackTrace();
-            future.cancel(true);
-            // Если в течение 30 секунд не вернулся результат проверки -
-            // создаем дефолтный объект "устройства" с maxPacketSize = 0
-            device = new Device(ipAddress, "0");
+    private void measurePackets(String[] devices, ExecutorService executorService) {
+        List<Future<Device>> listFutureDevice = new ArrayList<>();
+        for (String device : devices) {
+            listFutureDevice.add(executorService.submit(new PacketMeasurer(device)));
         }
-        // Сохраняем результат в inmemory БД
-        deviceRepository.save(device);
+        for (Future<Device> future : listFutureDevice) {
+            Device deviceResult;
+            try {
+                deviceResult = future.get(30, TimeUnit.SECONDS);
+                // Сохраняем результат в inmemory БД
+                deviceRepository.save(deviceResult);
+            } catch (Exception e) {
+                e.printStackTrace();
+                future.cancel(true);
+            }
+        }
     }
 }
