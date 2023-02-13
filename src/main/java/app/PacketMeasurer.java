@@ -76,6 +76,7 @@ public class PacketMeasurer implements Callable<Device> {
                 }
             }
         }
+        // Истинно, если хотя бы один пинг из трех вернулся
         return results.contains("1");
     }
 }

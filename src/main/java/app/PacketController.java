@@ -46,8 +46,8 @@ public class PacketController {
 
     /*    Запускаем задачу каждые 4 часа - проверяем в цикле полученный из application.properties
         список "устройств" в потоках из выделенного пула потоков, чтобы не занимать пользовательский пул*/
-    @Async
-    @Scheduled(initialDelay = 100000, fixedRate = 4 * 60 * 60 * 1000)
+
+    @Scheduled(initialDelay = 10000, fixedRate = 4 * 60 * 60 * 1000)
     public void checkPacketSizeBulkScheduled() {
         for (String device : devices) {
             measurePackets(device, scheduledPool);
