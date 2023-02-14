@@ -55,8 +55,8 @@ public class PacketController {
     }
 
     /*    Запускаем задачу каждые 4 часа - проверяем полученный из application.properties
-        список "устройств" в потоках из выделенного пула потоков, чтобы не занимать пользовательский пул*/
-    @Scheduled(initialDelay = 10000, fixedRate = 4 * 60 * 60 * 1000)
+        список "устройств" в потоках из выделенного пула, чтобы не занимать пользовательский пул*/
+    @Scheduled(initialDelay = 60000, fixedRate = 4 * 60 * 60 * 1000)
     public void checkPacketSizeBulkScheduled() {
         measurePackets(devices, scheduledPool);
     }

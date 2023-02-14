@@ -50,7 +50,7 @@ public class PacketMeasurer implements Callable<Device> {
     private boolean sendPacketToDevice(int packetSize) throws IOException {
         // Список, содержащий ответы от трех запросов пинг
         List<String> results = new ArrayList<>(3);
-        // отправляем последовательно три пакета и проверяем, есть ли хотя бы один ответ из трех ICMP запросов
+        // отправляем последовательно три пакета и проверяем, был ли хотя бы один ответ на трех ICMP запросов
         for (int i = 0; i <= 2; i++) {
             long startTime = System.currentTimeMillis();
             String[] command = {"CMD", "/c", String.format("ping -n 1 -w 1 -l %s ", packetSize) + deviceToCheck};
