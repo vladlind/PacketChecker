@@ -23,7 +23,7 @@ import java.util.logging.Logger;
 @RequestMapping("/packetchecker")
 public class PacketController {
 
-    Logger log  = Logger.getLogger(PacketController.class.getName());
+    Logger log = Logger.getLogger(PacketController.class.getName());
 
     private final DeviceRepository deviceRepository;
 
@@ -43,19 +43,19 @@ public class PacketController {
         this.devices = devices;
     }
 
-    /*Запуск ручной проверки - через http://localhost:8080/packetchecker/{devices_to_check_comma_separated}
-    * Пример: http://localhost:8080/packetchecker/1.1.1.1,2.2.2.2,4.3.2.1   */
+    /* Запуск ручной проверки - через http://localhost:8080/packetchecker/{devices_to_check_comma_separated}
+     * Пример: http://localhost:8080/packetchecker/1.1.1.1,2.2.2.2,4.3.2.1   */
     @GetMapping("/{devices}")
     public ResponseEntity<String> checkPacketSizePerRequest(@PathVariable("devices") String ipAddresses) {
-        String[] ipArray = Arrays.stream(ipAddresses.split(",")).toArray(String[] ::new);
+        String[] ipArray = Arrays.stream(ipAddresses.split(",")).toArray(String[]::new);
         measurePackets(ipArray, userPool);
         return new ResponseEntity<>(
                 String.format("Запрос на проверку %s отправлен", ipAddresses),
                 HttpStatus.OK);
     }
 
-    /*    Запускаем задачу каждые 4 часа - проверяем полученный из application.properties
-        список "устройств" в потоках из выделенного пула, чтобы не занимать пользовательский пул*/
+    /* Запускаем задачу каждые 4 часа - проверяем полученный из application.properties
+       список "устройств" в потоках из выделенного пула, чтобы не занимать пользовательский пул  */
     @Scheduled(initialDelay = 60000, fixedRate = 4 * 60 * 60 * 1000)
     public void checkPacketSizeBulkScheduled() {
         measurePackets(devices, scheduledPool);
