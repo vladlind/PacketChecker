@@ -2,6 +2,9 @@ package app;
 
 import jakarta.persistence.*;
 
+import java.util.Date;
+
+
 // Репрезентация результата проверки
 @Entity
 public class Device {
@@ -12,6 +15,12 @@ public class Device {
 
     private String ipAddress;
     private String maxPacketSize;
+
+    @Temporal(TemporalType.TIME)
+    private java.util.Date startTime;
+
+    @Temporal(TemporalType.TIME)
+    private java.util.Date endTime;
 
     public Device() {
     }
@@ -24,13 +33,11 @@ public class Device {
         this.id = id;
     }
 
-    public Device(String ipAddress, String maxPacketSize) {
+    public Device(String ipAddress, String maxPacketSize, Date startTime, Date endTime) {
         this.ipAddress = ipAddress;
         this.maxPacketSize = maxPacketSize;
-    }
-
-    public Device(String ipAddress) {
-        this.ipAddress = ipAddress;
+        this.startTime = startTime;
+        this.endTime = endTime;
     }
 
     public String getIpAddress() {
@@ -47,6 +54,22 @@ public class Device {
 
     public void setMaxPacketSize(String maxPacketSize) {
         this.maxPacketSize = maxPacketSize;
+    }
+
+    public Date getStartTime() {
+        return startTime;
+    }
+
+    public void setStartTime(Date startTime) {
+        this.startTime = startTime;
+    }
+
+    public Date getEndTime() {
+        return endTime;
+    }
+
+    public void setEndTime(Date endTime) {
+        this.endTime = endTime;
     }
 
     @Override

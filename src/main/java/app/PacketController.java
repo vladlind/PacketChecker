@@ -28,10 +28,10 @@ public class PacketController {
     private final DeviceRepository deviceRepository;
 
     //Пул потоков для ручных (инициированных пользователем) проверок
-    private final ExecutorService userPool = Executors.newFixedThreadPool(10);
+    private final ExecutorService userPool = Executors.newFixedThreadPool(3);
 
     //Пул потоков для проверок по расписанию
-    private final ExecutorService scheduledPool = Executors.newFixedThreadPool(10);
+    private final ExecutorService scheduledPool = Executors.newFixedThreadPool(3);
 
     // Спринг читает список "устройств" из application.properties для регулярных проверок
     @Value("${devices}")
@@ -43,7 +43,8 @@ public class PacketController {
         this.devices = devices;
     }
 
-    /*Запуск ручной проверки - через http://localhost:8080/packetchecker/{devices_to_check_comma_separated}   */
+    /*Запуск ручной проверки - через http://localhost:8080/packetchecker/{devices_to_check_comma_separated}
+    * Пример: http://localhost:8080/packetchecker/1.1.1.1,2.2.2.2,4.3.2.1   */
     @GetMapping("/{devices}")
     public ResponseEntity<String> checkPacketSizePerRequest(@PathVariable("devices") String ipAddresses) {
         String[] ipArray = Arrays.stream(ipAddresses.split(",")).toArray(String[] ::new);
@@ -53,10 +54,9 @@ public class PacketController {
                 HttpStatus.OK);
     }
 
-    /*    Запускаем задачу каждые 4 часа - проверяем в цикле полученный из application.properties
+    /*    Запускаем задачу каждые 4 часа - проверяем полученный из application.properties
         список "устройств" в потоках из выделенного пула потоков, чтобы не занимать пользовательский пул*/
-
-    @Scheduled(initialDelay = 1000000, fixedRate = 4 * 60 * 60 * 1000)
+    @Scheduled(initialDelay = 10000, fixedRate = 4 * 60 * 60 * 1000)
     public void checkPacketSizeBulkScheduled() {
         measurePackets(devices, scheduledPool);
     }
@@ -74,6 +74,7 @@ public class PacketController {
                 deviceRepository.save(deviceResult);
             } catch (Exception e) {
                 e.printStackTrace();
+                // Отменяем задачу, если что-то пошло не так
                 future.cancel(true);
             }
         }

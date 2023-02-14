@@ -31,38 +31,45 @@ public class PacketCheckerTest {
     @Test
     public void testSingleManualPacketCheck() {
         ResponseEntity<String> response =
-                testRestTemplate.getForEntity("/packetchecker/4.3.2.1", String.class);
+                testRestTemplate.getForEntity("/packetchecker/127.0.0.1", String.class);
         log.info(response.getBody());
-        assertTrue(Objects.requireNonNull(response.getBody()).contains("4.3.2.1"));
-        List<Device> devices = deviceRepository.findDeviceByIpAddress("4.3.2.1");
+        assertTrue(Objects.requireNonNull(response.getBody()).contains("127.0.0.1"));
+        List<Device> devices = deviceRepository.findDeviceByIpAddress("127.0.0.1");
         log.info(devices.get(0).toString());
-        assertEquals("0", devices.get(0).getMaxPacketSize());
+        assertEquals("1600", devices.get(0).getMaxPacketSize());
     }
 
     @Test
-    public void testTwoSimultaneousManualPacketChecksWithTheDifferentDevices()  {
+    public void testTwoSimultaneousManualPacketChecksWithDifferentDevices()  {
         ResponseEntity<String> response =
                 testRestTemplate.getForEntity("/packetchecker/8.8.8.8,1.2.3.4", String.class);
         log.info(response.getBody());
         assertTrue(Objects.requireNonNull(response.getBody()).contains("8.8.8.8,1.2.3.4"));
         List<Device> devices1  = deviceRepository.findDeviceByIpAddress("8.8.8.8");
         List<Device> devices2  = deviceRepository.findDeviceByIpAddress("1.2.3.4");
-        log.info(devices1.get(0).toString());
-        log.info(devices2.get(0).toString());
-        assertEquals("1472", devices1.get(0).getMaxPacketSize());
-        assertEquals("0", devices2.get(0).getMaxPacketSize());
+        Device device1 = devices1.get(0);
+        Device device2 = devices2.get(0);
+        log.info(device1.toString());
+        log.info(device2.toString());
+        assertEquals("1472", device1.getMaxPacketSize());
+        assertEquals("0", device2.getMaxPacketSize());
+        assertEquals(device1.getStartTime(), device2.getStartTime());
     }
 
     @Test
     public void testTwoSimultaneousManualPacketChecksWithTheSameDevice()  {
         ResponseEntity<String> response =
-                testRestTemplate.getForEntity("/packetchecker/127.0.0.1,127.0.0.1", String.class);
+                testRestTemplate.getForEntity("/packetchecker/1.1.1.1,1.1.1.1", String.class);
         log.info(response.getBody());
-        assertTrue(Objects.requireNonNull(response.getBody()).contains("127.0.0.1,127.0.0.1"));
-        List<Device> devices1  = deviceRepository.findDeviceByIpAddress("127.0.0.1");
-        log.info(devices1.get(0).toString());
-        log.info(devices1.get(1).toString());
-        assertEquals("1600", devices1.get(0).getMaxPacketSize());
-        assertEquals("1600", devices1.get(1).getMaxPacketSize());
+        assertTrue(Objects.requireNonNull(response.getBody()).contains("1.1.1.1,1.1.1.1"));
+        List<Device> devices  = deviceRepository.findDeviceByIpAddress("1.1.1.1");
+        Device device1 = devices.get(0);
+        Device device2 = devices.get(1);
+        log.info(device1.toString());
+        log.info(device2.toString());
+        assertEquals("1472", device1.getMaxPacketSize());
+        assertEquals("1472", device2.getMaxPacketSize());
+        assertEquals(device1.getStartTime(), device2.getStartTime());
+        assertEquals(device1.getEndTime(), device2.getEndTime());
     }
 }
